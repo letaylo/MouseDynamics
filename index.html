@@ -1,0 +1,567 @@
+<?php session_start();
+$id = $_SESSION['sessionid'];
+/*if (!isset($_SESSION['user'])){
+	header('Location: index.php');
+}*/
+
+if (isset($_POST['xpos']) && isset($_POST['ypos']) && isset($_POST['timestamp']) && isset($_POST['click'])){ //Check if the form was submitted
+	$failed=0; //Set default end code
+	$mysqli=new mysqli("localhost", "admin", "weblogger", "mouse_log");	//Connect to database
+	if ($mysqli->connect_errno) {
+		echo "Failed to connect to MySQL: (" . $mysqli->connect_errno . ") " . $mysqli->connect_error . " ";
+		$failed=1;
+	} else {
+		$mysqli->set_charset('utf8');		
+		
+		//Insert into database		
+		/*
+		$fetch = "SELECT session_id,timestamp,rel_time,xpos,ypos,vs FROM mouse_data WHERE entry_id=(SELECT max(entry_id) FROM mouse_data)";
+		$result = $mysqli->query($fetch);
+		$followingdata = $result->fetch_assoc();
+		$xpos = $followingdata['xpos'];
+		$ypos = $followingdata['ypos'];
+		$rel_time = $followingdata['rel_time'];
+		$session = $followingdata['session_id'];
+		$speed = $followingdata['vs'];
+		$timestamp = $followingdata['timestamp'];
+		if ($_POST['timestamp'] != $timestamp || mysqli_num_rows($result) == 0 ) {
+			$vx = 0;
+			$vy = 0;
+			$vs = 0;
+			$dt = 0;
+			$a = 0;
+			$angle = 0;
+		} else if ( $_POST['rel_time'] > ($rel_time + 150) ) {
+			$dx = $_POST['xpos'] - $xpos;
+			$dy = $_POST['ypos'] - $ypos;
+			$vx = 0;
+			$vy = 0;
+			$vs = 0;
+			$dt = ( $_POST['rel_time'] - $rel_time ) / 1000;
+			$a = 0;
+			$angle = atan($dy/$dx); 
+		} else {
+			$dt = ( $_POST['rel_time'] - $rel_time ) / 1000;
+			$dx = $_POST['xpos'] - $xpos;
+			$dy = $_POST['ypos'] - $ypos;
+			$vx = $dx / $dt;
+			$vy = $dy / $dt;
+			$vs = sqrt( ($vx**2) + ($vy**2) );
+			$a = abs( $vs - $speed ) / $dt;
+			$angle = atan($dy/$dx);
+			$dt = 0;
+		}*/
+		
+		if (!($stmt = $mysqli->prepare("INSERT INTO mouse_data(session_id,timestamp,,xpos,ypos,l_mousedown,l_mouseup,r_mousedown,r_mouseup,m_mousedown,m_mouseup) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"))) {
+			echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error . " ";
+			$failed=5;
+		} else {
+			if (!$stmt->bind_param("sssssssssss",$id,$_POST['timestamp'],$_POST['xpos'],$_POST['ypos'],$_POST['l_down'],$_POST['l_up'],$_POST['r_down'],$_POST['r_up'],$_POST['m_down'],$_POST['m_up'] )) {
+				echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error . " ";
+				$failed=6;
+			} else {
+				if (!$stmt->execute()) {
+					echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error . " ";
+					$failed=7;
+				}
+			}
+		} 
+	}
+	unset($mysqli);
+	switch ($failed){
+		case 0:
+			echo "Data entered successfully.";
+			break;
+		case 1:
+			echo "Data entry failed.";
+			break;
+		case 2:
+			echo "Data entry failed: Error 2";
+			break;
+		case 3:
+			echo "Data entry failed: Error 3";
+			break;
+		case 4:
+			echo "Data entry failed: Error 4";
+			break;
+		case 5:
+			echo "Data entry failed: Error 5";
+			break;
+		case 6:
+			echo "Data entry failed: Error 6";
+			break;
+		case 7:
+			echo "Data entry failed: Error 7";
+			break;
+		default:
+			echo "Data entry failed.";
+	}
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+    
+        <meta charset="utf-8">
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+        
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+		
+        <script src="mouse_log.js"></script>
+		
+        <title>Account Forum</title>
+        
+        <style type="text/css">
+        		
+        		 .container {
+        		 		margin-top: 60px;
+        		 		width: 800px;
+        		 }      
+        		 
+        		 #lock-img {
+					  height: 120px;    
+					  float:left; 
+					  margin: 0 auto;
+        		 }
+        		 
+				
+				/* Customize the label (the container) */
+				.checkbox-container {
+				  display: block;
+				  position: relative;
+				  padding-left: 35px;
+				  margin-bottom: 12px;
+				  cursor: pointer;
+				  -webkit-user-select: none;
+				  -moz-user-select: none;
+				  -ms-user-select: none;
+				  user-select: none;
+				}
+				
+				/* Hide the browser's default radio button */
+				.checkbox-container input {
+				  position: absolute;
+				  opacity: 0;
+				}
+				
+				/* Create a custom radio button */
+				.checkmark {
+				  position: absolute;
+				  top: 15px;
+				  left: 7px;;
+				  height: 13.5px;
+				  width: 13.5px;
+				  background-color: #eee;
+				  border-radius: 50%;
+				  margin-left: 5px;
+				}
+				
+				/* On mouse-over, add a grey background color */
+				.checkbox-container:hover input ~ .checkmark {
+				  background-color: #ccc;
+				}
+				
+				/* When the radio button is checked, add a blue background */
+				.checkbox-container input:checked ~ .checkmark {
+				  background-color: #2196F3;
+				}
+				
+				/* Create the indicator (the dot/circle - hidden when not checked) */
+				.checkmark:after {
+				  content: "";
+				  position: absolute;
+				  display: none;
+				}
+				
+				/* Show the indicator (dot/circle) when checked */
+				.checkbox-container input:checked ~ .checkmark:after {
+				  display: block;
+				}
+				
+				/* Style the indicator (dot/circle) */
+				.checkbox-container .checkmark:after {
+				  top: 4.5px;
+				  left: 5px;
+				  width: 4px;
+				  height: 4px;
+				  border-radius: 50%;
+				  background: white;
+				}
+				
+				.card-img {
+					margin-top: 8px;
+					height: 32px;
+					width: auto;
+				}
+				
+				select {
+					margin-left: 10px;
+					border-radius: 5px;		
+					background-color: rgb(237, 237, 237);
+				}
+				
+				#sec-code {
+					width: 75px;
+					margin-right: 10px;
+					margin-left: 15px;
+				}
+        
+        </style>
+        
+    </head>
+    
+    <body>
+	
+		<!-- Hidden Form for mouse data collection -->
+		<form name="mouse_data" id="mouse_data" method="post">
+		<input type="hidden" name="xpos" id="xpos">
+		<input type="hidden" name="ypos" id="ypos">
+		<input type="hidden" name="timestamp" id="timestamp">
+		<input type="hidden" name="r_down" id="r_down">
+		<input type="hidden" name="l_down" id="l_down">
+		<input type="hidden" name="m_down" id="m_down">
+		<input type="hidden" name="r_up" id="r_up">
+		<input type="hidden" name="l_up" id="l_up">
+		<input type="hidden" name="m_up" id="m_up">
+
+		</form>
+
+        <div class="container">
+
+			  <div class="row">
+	   	
+			    	<img src="lock.png" alt="Lock-Image" id="lock-img">
+					    
+				    <div class="col-10">
+					  
+					 <h5 id="title"><strong>Secure Payment Info</strong></h5>
+					    
+				    <hr>
+				    
+				    <form method="post">
+						    
+						 <div class="row" id="card-selection">
+						
+							<div class="c-card" id="mastercard">
+							
+								<label class="checkbox-container">									
+											
+										<img class="card-img" src="mastercard.png" alt="MasterCard">
+									  
+										<input type="radio" checked="checked" name="card-type">
+		
+										<span class="checkmark"></span>
+									 
+								</label>	
+
+							</div>
+								
+							<div class="c-card" id="visa">
+							
+								<label class="checkbox-container">									
+											
+										<img class="card-img" src="visa.png" alt="Visa">
+									  
+										<input type="radio" name="card-type">
+		
+										<span class="checkmark"></span>
+									 
+								</label>
+						
+							</div>
+								
+							<div class="c-card" id="amex">
+							
+								<label class="checkbox-container">									
+											
+										<img class="card-img" src="AmericanExpress.svg" alt="Amex">
+									  
+										<input type="radio" name="card-type">
+		
+										<span class="checkmark"></span>
+									 
+								</label>
+								
+							</div>
+						
+							<div class="c-card" id="discover">
+							
+								<label class="checkbox-container">									
+											
+										<img class="card-img" src="discover.jpg" alt="Amex">
+									  
+										<input type="radio" name="card-type">
+		
+										<span class="checkmark"></span>
+									 
+								</label>	 
+								
+							</div>
+							
+							<div class="c-card" id="payPal">
+					         	
+			          		<label class="checkbox-container">
+			          			
+			          			  <img class="card-img" src="paypal.png" alt="PayPal">
+								
+		                       <input type="radio" name="card-type">
+	
+									  <span class="checkmark"></span>
+	
+								</label>
+								
+							</div>
+															
+						</div>
+						
+						<br>
+		             
+		            <div class="form-group" id="name-area">
+		            
+		                <label for="input-name">Name (as it appears on your card)</label>
+		              
+		                <input class="form-control" placeholder="John Doe etc. " id="name">
+		         				             
+		            </div>
+				             
+		            <div class="form-group" id="card-num-area">
+		               
+		                <label for="input-card-num">Card Number (no dashes or spaces)</label>
+		            
+		                <input type="text" id="card-num" class="form-control">
+		              
+		            </div>
+				             
+		            <div class="form-group" id="expiration-date-area">
+		              
+	              		<label for="input-name">Expiration date</label>
+						      
+					      <div class="row">
+
+				            <div>							              
+
+				              <div style="width:15%;margin-left:5px;">
+
+								    <select id="month">
+
+									    <option value=''>--Select Month--</option>
+
+									    <option selected value='January'>01 - January</option>
+
+									    <option value='February'>01 - February</option>
+
+									    <option value='March'>03 - March</option>
+
+									    <option value='April'>04 - April</option>
+
+									    <option value='May'>05 - May</option>
+
+									    <option value='June'>06 - June</option>
+
+									    <option value='June'>07 - July</option>
+
+									    <option value='August'>08 - August</option>
+
+									    <option value='September'>09 - September</option>
+
+									    <option value='October'>10 - October</option>
+
+									    <option value='November'>11 - November</option>
+
+									    <option value='December'>12 - December</option>
+
+								    </select> 
+								   
+								  </div>
+								
+								</div>  
+
+
+			              <div style="width:15%;margin-left:5px;">
+
+							    <select id="year"></select>
+
+							  </div>
+
+							</div>  
+								
+		             </div> 
+				             
+		             <div class="form-group" id="sec-code-area">
+		                   
+		                   <label class="control-label">Security code (3 on back, Amex: 4 on front)</label>
+		                   
+		                   <div class="row">		                   
+
+			                   <input class="form-control" id="sec-code" name="Security Code">
+
+			                   <img src="sec-code.png" alt="Security Code" class="card-img">
+
+		                   </div>	
+
+		             </div>
+		             <hr>
+		             <div class="form-group" id="shipping-options">
+		               
+		               <label class="control-label">Delivery Options</label><br>
+							<form action="">
+								  <div class="shipping-option" id="2-day-shipping"><input type="radio"  name="delivery-option" value="male"> <i>FREE Two-Day Shipping</i><br></div>
+								  <div class="shipping-option" id="no-rush-shipping"><input type="radio" name="delivery-option" value="female"> <i>FREE No-Rush Shipping</i><br></div>								  
+								  <div class="shipping-option" id="1-day-shipping"><input type="radio" name="delivery-option" value="other"> <i>One-Day Shipping</i><br></div>								  
+								  <div class="shipping-option" id="same-day-shipping"><input type="radio" name="delivery-option" value="female"> <i>Same-Day Delivery</i><br></div>
+								  <div class="shipping-option" id="standard-shipping"><input type="radio" name="delivery-option" value="female"> <i>Standard Shipping (4-5 business days)</i><br></div>							
+							</form> 
+							
+						</div>
+		             
+		             <div class="form-group" id="street-addr-area">
+		                   <label class="control-label">Street Address</label>
+		                   <input class="form-control" id="street-address">
+		             </div>
+		              
+		             <div class="form-group" id="zip-code-area">
+		                    <label class="control-label">Zip Code</label>
+		                    <input class="form-control" id="zip-code">
+		             </div>
+		            
+		             <div class="form-group" id="city-area">
+		                    <label class="control-label">City</label>
+		                    <input class="form-control" id="city">
+		             </div> 
+
+		             <div class="form-group" id="state-area">
+		                    <label class="control-label">State</label>
+		                    <input class="form-control" id="state">
+		             </div>
+		            				             
+		             <div class="form-group" id="	country-area">
+		                    <label class="control-label">Country</label>
+		                    <input class="form-control" id="country">
+		             </div>
+		          
+		             <button type="submit" class="btn btn-primary" id="submit">Submit</button>
+		          
+				 	</form>
+			  
+			    </div>
+	
+			 </div>
+   
+        </div>
+        
+        <br><br>
+     
+     
+        <script src = "jquery.min.js"></script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/js/bootstrap.min.js" integrity="sha384-a5N7Y/aK3qNeh15eJKGWxsqtnX/wWdSZSKp+81YjTmS15nvnvxKHuzaWwXHDli+4" crossorigin="anonymous"></script>
+
+        <script type="text/javascript">
+        				
+				var log = "";
+						
+            $(function () {
+                $('[data-toggle="popover"]').popover()
+            });
+
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+            });
+
+				
+				var focused = false;
+				$("select, .form-control").on("focusin", function(){
+					 if(!focused){
+                	console.log( $(this).attr("id") + ' focused in at ' + new Date());
+                	log += ( $(this).attr("id") + ' focused in at ' + new Date() + '\n');
+                	focused = true;      
+                }
+            });
+            $("select, .shipping-option").on("click", function(){
+                //alert("value clicked");
+                console.log($(this).attr("id") + ' ' + $(this).attr("id").val() + ' clicked at ' + new Date());
+                log += ($(this).attr("id") + ' ' + $(this).attr("id").val() + ' clicked at ' + new Date() + '\n');
+            });
+            $("select, .form-control").on("focusout", function(){
+                focused = false;
+                console.log($(this).attr("id") + ' focused out at ' + new Date());
+                log += ($(this).attr("id") + ' focused out at ' + new Date() + '\n')
+            });
+				
+            var c_date;
+            $(".c-card, #lock-img, .form-group").hover(function(){
+                c_date = new Date();
+            }, function(){
+                console.log($(this).attr("id") + " hovered for "+(new Date()-c_date)/1000.0 + " seconds");
+                log += ($(this).attr("id") + " hovered for "+(new Date()-c_date)/1000.0 + " seconds" + '\n');
+                c_date = new Date();
+            });
+            
+				var c_date2;
+            $(".shipping-option").hover(function(){
+                c_date2 = new Date();
+            }, function(){
+                console.log($(this).attr("id") + " hovered for "+(new Date()-c_date2)/1000.0 + " seconds");
+                log += ($(this).attr("id") + " hovered for "+(new Date()-c_date2)/1000.0 + " seconds" + '\n');
+                c_date2 = new Date();
+            });
+                        
+            
+            var first = true;// quick fix for double click event firing
+            $(".c-card").click( function() {
+            	if(first){
+            		console.log($(this).attr("id") + ' clicked at ' + new Date());
+            		log += ($(this).attr("id") + ' clicked at ' + new Date() + '\n');
+            		first = false;
+            	}
+            	else{
+            		first = true;            	
+            	}     
+            });
+            
+            $(document).keypress(function(event){
+                console.log(String.fromCharCode(event.which) + ' entered in ' + $(event.target).attr("id"));
+                log += (String.fromCharCode(event.which) + ' entered in ' + $(event.target).attr("id") + '\n');
+            });        
+        
+            
+            $("form").submit(function (e){
+            	var filename = "log.txt";
+            	download(filename, log);        	
+          	});
+
+				function download(filename, text) {
+				  var element = document.createElement('a');
+				  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+				  element.setAttribute('download', filename);
+				
+				  element.style.display = 'none';
+				  document.body.appendChild(element);
+				
+				  element.click();
+				
+				  document.body.removeChild(element);
+				}
+
+
+				// Creating date range for expiration date
+			   var start = new Date().getFullYear();
+			   var end = start + 20;
+				var options = "";
+				for(var year = start ; year <=end; year++){
+				   options += "<option>"+ year +"</option>";
+				}
+				document.getElementById("year").innerHTML = options;
+        
+        </script>
+        
+    </body>
+    
+</html>
