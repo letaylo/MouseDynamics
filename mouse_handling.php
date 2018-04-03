@@ -11,7 +11,7 @@ $id = $_SESSION['sessionid'];
 	header('Location: index.php');
 }*/
 
-if ( isset($_POST['events']) && isset($_POST['xpos']) && isset($_POST['ypos']) && isset($_POST['timestamp'])){ //Check if the form was submitted
+if ( isset($_POST['xpos']) && isset($_POST['ypos']) && isset($_POST['timestamp'])){ //Check if the form was submitted
 	$failed=0; //Set default end code
 	echo "test";
 	$mysqli=new mysqli("localhost", "admin", "weblogger", "mouse_log");	//Connect to database

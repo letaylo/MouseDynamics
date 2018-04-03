@@ -1,5 +1,7 @@
+//CHANGES MUST BE UPLOADED TO INDEX YA DOOF
+
 $(document).ready(function() {
-	var $date = new Date();
+	//var $date = new Date();
 	
 	
 	$(document).mousemove(function(event) {
@@ -12,7 +14,7 @@ $(document).ready(function() {
 			var $xpos = event.pageX;
 			var $ypos = event.pageY;
 			var $timestamp = event.timeStamp;
-			var $events = "mm";
+			var $event_type = "mm";
 			
 			
 			//updates form
@@ -27,14 +29,14 @@ $(document).ready(function() {
 			document.getElementById("m_up").value = $l_up;
 			//document.getElementById("click").value = $click;
 			//document.getElementById("enter").value = $enter;*/
-
+			//document.getElementById("events").value = $event_type;
 			
 			//sends data to php for processing
 			$.ajax( {
 				type: "POST",
 				url: 'mouse_handling.php',
 				processData: true,
-				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $events},
+				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $event_type},
 				success: function(data) {
 					//alert("success");
 				},
@@ -50,23 +52,23 @@ $(document).ready(function() {
 	}); 	
 	
 	$(document).mousedown(function(event) {
-		var $dateNew = new Date();
-		var $dateCompare = $date.getTime() + 100;
+		//var $dateNew = new Date();
+		//var $dateCompare = $date.getTime() + 100;
 		
-		if ($dateCompare <= $dateNew.getTime()) {
+		//if ($dateCompare <= $dateNew.getTime()) {
 			
 			//saves important data
 			var $xpos = event.pageX;
 			var $ypos = event.pageY;
 			var $timestamp = event.timeStamp;
-			var $events "dne";
+			var $event_type;
 			
 			if (event.button == 0) {
-				$events = "ld";
+				$event_type = "ld";
 			}else if (event.button == 1) {
-				$events = "rd";
+				$event_type = "rd";
 			}else {
-				$events = "md";
+				$event_type = "md";
 			}
 			
 			//updates form
@@ -88,7 +90,7 @@ $(document).ready(function() {
 				type: "POST",
 				url: 'mouse_handling.php',
 				processData: true,
-				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $events},
+				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $event_type},
 				success: function(data) {
 					//alert("success");
 				},
@@ -98,9 +100,9 @@ $(document).ready(function() {
 			});		
 			
 
-			$date = $dateNew;
+			//$date = $dateNew;
 					
-		}
+		//}
 	});
 	
 	$(document).mouseup(function(event) {
@@ -113,14 +115,14 @@ $(document).ready(function() {
 			var $xpos = event.pageX;
 			var $ypos = event.pageY;
 			var $timestamp = event.timeStamp;
-			var $events = "dne";
+			var $event_type;
 			
 			if (event.button == 0) {
-				$events = "lu";
+				$event_type = "lu";
 			}else if (event.button == 1) {
-				$events = "ru";
+				$event_type = "ru";
 			}else {
-				$events = "mu";
+				$event_type = "mu";
 			}
 			
 			//updates form
@@ -142,7 +144,7 @@ $(document).ready(function() {
 				type: "POST",
 				url: 'mouse_handling.php',
 				processData: true,
-				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $events},
+				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $event_type},
 				success: function(data) {
 					//alert("success");
 				},

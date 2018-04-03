@@ -128,12 +128,7 @@ session_regenerate_id();
 		<input type="hidden" name="xpos" id="xpos">
 		<input type="hidden" name="ypos" id="ypos">
 		<input type="hidden" name="timestamp" id="timestamp">
-		<input type="hidden" name="r_down" id="r_down">
-		<input type="hidden" name="l_down" id="l_down">
-		<input type="hidden" name="m_down" id="m_down">
-		<input type="hidden" name="r_up" id="r_up">
-		<input type="hidden" name="l_up" id="l_up">
-		<input type="hidden" name="m_up" id="m_up">
+		<input type="hidden" name="events" id="events">
 
 		</form>
 
@@ -469,7 +464,7 @@ session_regenerate_id();
         </script>
         <script type="text/javascript">
 		$(document).ready(function() {
-	var $date = new Date();
+	//var $date = new Date();
 	
 	
 	$(document).mousemove(function(event) {
@@ -482,12 +477,7 @@ session_regenerate_id();
 			var $xpos = event.pageX;
 			var $ypos = event.pageY;
 			var $timestamp = event.timeStamp;
-			var $l_down = 0;
-			var $r_down = 0;
-			var $m_down = 0;
-			var $l_up = 0;
-			var $r_up = 0;
-			var $m_up = 0;
+			var $event_type = "mm";
 			
 			
 			//updates form
@@ -502,14 +492,14 @@ session_regenerate_id();
 			document.getElementById("m_up").value = $l_up;
 			//document.getElementById("click").value = $click;
 			//document.getElementById("enter").value = $enter;*/
-
+			document.getElementById("events").value = $event_type;
 			
 			//sends data to php for processing
 			$.ajax( {
 				type: "POST",
 				url: 'mouse_handling.php',
 				processData: true,
-				data: { xpos : $xpos, ypos : $ypos, timestamp : $timestamp, l_down : $l_down, r_down : $r_down, m_down : $m_down, l_up : $l_up, r_up : $r_up, m_up : $m_up},
+				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $event_type},
 				success: function(data) {
 					//alert("success");
 				},
@@ -525,28 +515,23 @@ session_regenerate_id();
 	}); 	
 	
 	$(document).mousedown(function(event) {
-		var $dateNew = new Date();
-		var $dateCompare = $date.getTime() + 100;
+		//var $dateNew = new Date();
+		//var $dateCompare = $date.getTime() + 100;
 		
-		if ($dateCompare <= $dateNew.getTime()) {
+		//if ($dateCompare <= $dateNew.getTime()) {
 			
 			//saves important data
 			var $xpos = event.pageX;
 			var $ypos = event.pageY;
 			var $timestamp = event.timeStamp;
-			var $l_down = 0;
-			var $r_down = 0;
-			var $m_down = 0;
-			var $l_up = 0;
-			var $r_up = 0;
-			var $m_up = 0;
+			var $event_type;
 			
 			if (event.button == 0) {
-				$l_down = 1;
+				$event_type = "ld";
 			}else if (event.button == 1) {
-				$r_down = 1;
+				$event_type = "rd";
 			}else {
-				$m_down = 1;
+				$event_type = "md";
 			}
 			
 			//updates form
@@ -568,7 +553,7 @@ session_regenerate_id();
 				type: "POST",
 				url: 'mouse_handling.php',
 				processData: true,
-				data: { xpos : $xpos, ypos : $ypos, timestamp : $timestamp, l_down : $l_down, r_down : $r_down, m_down : $m_down, l_up : $l_up, r_up : $r_up, m_up : $m_up},
+				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $event_type},
 				success: function(data) {
 					//alert("success");
 				},
@@ -578,9 +563,9 @@ session_regenerate_id();
 			});		
 			
 
-			$date = $dateNew;
+			//$date = $dateNew;
 					
-		}
+		//}
 	});
 	
 	$(document).mouseup(function(event) {
@@ -593,19 +578,14 @@ session_regenerate_id();
 			var $xpos = event.pageX;
 			var $ypos = event.pageY;
 			var $timestamp = event.timeStamp;
-			var $l_up = 0;
-			var $r_up = 0;
-			var $m_up = 0;
-			var $l_down = 0;
-			var $r_down = 0;
-			var $m_down = 0;
+			var $event_type;
 			
 			if (event.button == 0) {
-				$l_up = 1;
+				$event_type = "lu";
 			}else if (event.button == 1) {
-				$r_up = 1;
+				$event_type = "ru";
 			}else {
-				$m_up = 1;
+				$event_type = "mu";
 			}
 			
 			//updates form
@@ -627,7 +607,7 @@ session_regenerate_id();
 				type: "POST",
 				url: 'mouse_handling.php',
 				processData: true,
-				data: { xpos : $xpos, ypos : $ypos, timestamp : $timestamp, l_down : $l_down, r_down : $r_down, m_down : $m_down, l_up : $l_up, r_up : $r_up, m_up : $m_up},
+				data: {xpos : $xpos, ypos : $ypos, timestamp : $timestamp, events : $event_type},
 				success: function(data) {
 					//alert("success");
 				},

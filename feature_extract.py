@@ -11,24 +11,15 @@ session_id = []
 timestamp = []
 xpos = []
 ypos = []
-l_mousedown = []
-l_mouseup = []
-r_mousedown = []
-r_mouseup = []
-m_mousedown = []
-m_mouseup = []
+events = []
 for row in csv_r:
 	entry_id.append(row[0])
-	session_id.append(row[1])
-	timestamp.append(float(row[2]))
-	xpos.append(int(row[3]))
-	ypos.append(int(row[4]))
-	l_mousedown.append(row[5])
-	l_mouseup.append(row[6])
-	r_mousedown.append(row[7])
-	r_mouseup.append(row[8])
-	m_mousedown.append(row[9])
-	m_mouseup.append(row[10])
+	events.append(row[1])
+	session_id.append(row[2])
+	timestamp.append(float(row[3]))
+	xpos.append(int(row[4]))
+	ypos.append(int(row[5]))
+
 
 size = len(entry_id)
 #Feature vector array: angle, angular velocity, curvature, curvature change rate, x/y velocity, speed, acceleration, jerk 
@@ -116,16 +107,67 @@ total_distance = [0]
 critical_points = [0]
 straightness = [0]
 jitter = [0]
-strokes = 0
-stroke_locations = [0]
-events = ["Null"]
-event = 0
-silence = [0]
+strokes = 0	#number of strokes so far
+stroke_locations = []	#holds stroke locations
+events_complex = [] #holds complex  events
+event = 0	#temporary holder
+silence = [] #length of each silence
+silence_locations = [] #locations of each silence
 #mouse_event = []
 #extracts features
 for i in range(size - 1):
 	dt.append(timestamp[i+1] - timestamp[i])
 	#determines strokes, based on silence and clicks
+	if event == 0 :
+		stroke_locations.append(i+1)
+		
+		
+		
+	#determines event
+	if events[i+1] == "ld":
+		strokes += 1	
+		event = "ld"
+		if events_complex[strokes-2] == "mm" :
+			event = "mm_ld"
+			#strokes -=1
+			
+	elif events[i+1] == "lu":
+		if event == "mm_ld" :
+			event = "mm_lc"
+		elif len(events_complex) > 1 :
+			if event == "ld" and events_complex[strokes-2] == "lc" :
+				events_complex[strokes-2] = "dlc"
+				stroke_locations.pop(strokes-1)
+				strokes -= 1
+				event = 0
+			elif event == "ld" and events_complex[strokes-2] == "mm_lc" :
+				events_complex[strokes-2] = "mm_dlc"
+				stroke_locations.pop(strokes-1)
+				strokes -= 1
+				event = 0
+		elif event == "ld" :
+			event = "lc"
+	
+		if event != 0 :
+			events_complex.append(event)
+			event = 0
+			
+	elif events[i+1] == "mm" :
+		if event == 0 :
+			event = "mm"
+			strokes += 1
+		if event == "ld" :
+			event = "dd"
+		elif event == "mm_ld" :
+			event = "mm_dd"
+		if i+2 < size-1 :
+			if events[i+2] == "ld" :
+				events_complex.append(event)
+				event = 0
+			
+	if i == size-2 :
+		events_complex.append(event)
+	
 	if dt[i+1] > 50 :
 		angle.append(0)
 		angle_v.append(0)
@@ -139,34 +181,18 @@ for i in range(size - 1):
 		dv.append(0)
 		a.append(0)
 		jerk.append(0)
-		strokes += 1
-		stroke_locations.append(i+1)
 		dx.append(0)
 		dy.append(0)
 		ds.append(0)
 		silence.append(dt[i+1])
-		if xpos[i+1] != xpos[i] or ypos[i+1] != ypos[i] :
-			event = "mousemove"
+		silence_locations.append(i)
 		
-	#determines event
-	if l_mousedown[i+1] == 1 :
-		strokes += 1
-		event = "left_down"
-		if math.fabs(xpos[i+1] - xpos[i]) > 25 or math.fabs(ypos[i+1] - ypos[i]) > 25 or events[strokes-1] == "mousemove" :
-			event = "mm_lc"
-			strokes -= 1
-		elif events[strokes-1] == "lc" :
-			strokes -= 1
-			event = "dbl_l"
-		elif events[strokes-1] == "mm_lc" :
-			strokes -= 1
-			event = "mm_dbl_l"
+		if event == "mm" :
+			events_complex.append("mm")
+			event = 0
+		#else :
 		
-	if l_mouseup[i+1] == 1 :
-		if events[strokes]
-		#if a compound event, del previous event and non-needed zeroes, append event, decrement strokes	
-		events.append(event)
-	else :
+	if dt[i+1] <= 50 :
 		dx.append(xpos[i+1] - xpos[i])
 		#if xpos[i+1] < x_min :
 		#	x_min = xpos[i+1]
@@ -181,10 +207,10 @@ for i in range(size - 1):
 		#	y_max = ypos[i+1]
 		#y_mean += ypos[i+1]
 
-		ds.append(math.sqrt((dy[i+1] ** 2) + (dx[i+1] ** 2)))
+		ds.append(math.sqrt((dy[i+1] ** 2) + (dx[i+1] ** 2))) #
 		
 	
-		angle.append(math.atan2(dy[i+1],dx[i+1]))
+		angle.append(math.atan2(dy[i+1],dx[i+1])) #
 
 		angle_v.append((angle[i+1] - angle[i]) / dt[i+1])
 		
@@ -219,13 +245,13 @@ for i in range(size - 1):
 		
 strokes += 1
 stroke_locations.append(size-1)
-
 #Initial Feature Analysis, broken up by strokes
 
 for j in range(strokes - 1) :
-	loc = stroke_locations[j+1]
-	cur_loc = stroke_locations[j]
-	cur_size = loc - cur_loc
+	print(events_complex[j])
+	loc = stroke_locations[j+1]	#next stroke loc
+	cur_loc = stroke_locations[j] #current stroke loc
+	cur_size = loc - cur_loc		#size of current stroke
 	if j != 0 :
 		dy_temp = int(ypos[cur_loc + 1]) - int(ypos[cur_loc])
 		dx_temp = int(xpos[cur_loc + 1]) - int(xpos[cur_loc])
@@ -346,67 +372,68 @@ for j in range(strokes - 1) :
 	#y_mean[j] = y_mean[j]/(cur_size - 1)
 	#y_minmax[j] = y_max[j] - y_min[j]
 	
-	angle_mean[j] = angle_mean[j]/(cur_size - 1)
+	angle_mean[j] = angle_mean[j]/(cur_size)
 	angle_minmax[j] = angle_max[j] - angle_min[j]
 
-	angle_v_mean[j] = angle_v_mean[j]/(cur_size - 1)
+	angle_v_mean[j] = angle_v_mean[j]/(cur_size)
 	angle_v_minmax[j] = angle_v_max[j] - angle_v_min[j]
 
-	curve_mean[j] = curve_mean[j]/(cur_size - 1)
+	curve_mean[j] = curve_mean[j]/(cur_size)
 	curve_minmax[j] = curve_max[j] - curve_min[j]
 
-	curve_r_mean[j] = curve_r_mean[j]/(cur_size - 1)
+	curve_r_mean[j] = curve_r_mean[j]/(cur_size)
 	curve_r_minmax[j] = curve_r_max[j] - curve_r_min[j]
 
-	vx_mean[j] = vx_mean[j]/(cur_size - 1)
+	vx_mean[j] = vx_mean[j]/(cur_size)
 	vx_minmax[j] = vx_max[j] - vx_min[j]
 
-	vy_mean[j] = vy_mean[j]/(cur_size - 1)
+	vy_mean[j] = vy_mean[j]/(cur_size)
 	vy_minmax[j] = vy_max[j] - vy_min[j]
 
-	v_mean[j] = v_mean[j]/(cur_size - 1)
+	v_mean[j] = v_mean[j]/(cur_size)
 	v_minmax[j] = v_max[j] - v_min[j]
 
-	a_mean[j] = a_mean[j]/(cur_size - 1)
+	a_mean[j] = a_mean[j]/(cur_size)
 	a_minmax[j] = a_max[j] - a_min[j]
 
-	jerk_mean[j] = jerk_mean[j]/(cur_size - 1)
+	jerk_mean[j] = jerk_mean[j]/(cur_size)
 	jerk_minmax[j] = jerk_max[j] - jerk_min[j]
 	total_dx = xpos[loc] - xpos[cur_loc]
 	total_dy = ypos[loc] - ypos[cur_loc]
 	
 	straightness[j] = math.sqrt((total_dx ** 2) + (total_dy ** 2))/total_distance[j]
 
-	for i in range (cur_size - 1) :
+	for i in range (cur_size) :
 		#x_sd += ((xpos[i+1] - x_mean) ** 2)
 		#y_sd += ((ypos[i+1] - y_mean) ** 2)
-		angle_sd[j] += ((angle[i+cur_size+1] - angle_mean[j]) ** 2)
-		angle_v_sd[j] += ((angle_v[i+cur_size+1] - angle_v_mean[j]) ** 2)
-		curve_sd[j] += ((curve[i+cur_size+1] - curve_mean[j]) ** 2)
-		curve_r_sd[j] += ((curve_r[i+cur_size+1] - curve_r_mean[j]) ** 2)
-		vx_sd[j] += ((vx[i+cur_size+1] - vx_mean[j]) ** 2)
-		vy_sd[j] += ((vy[i+cur_size+1] - vy_mean[j]) ** 2)
-		v_sd[j] += ((v[i+cur_size+1] - v_mean[j]) ** 2)
-		a_sd[j] += ((a[i+cur_size+1] - a_mean[j]) ** 2)
-		jerk_sd[j] += ((jerk[i+cur_size+1] - jerk_mean[j]) ** 2)
+		#changing next spot from size to loc
+		angle_sd[j] += ((angle[i+cur_loc] - angle_mean[j]) ** 2)
+		angle_v_sd[j] += ((angle_v[i+cur_loc] - angle_v_mean[j]) ** 2)
+		curve_sd[j] += ((curve[i+cur_loc] - curve_mean[j]) ** 2)
+		curve_r_sd[j] += ((curve_r[i+cur_loc] - curve_r_mean[j]) ** 2)
+		vx_sd[j] += ((vx[i+cur_loc] - vx_mean[j]) ** 2)
+		vy_sd[j] += ((vy[i+cur_loc] - vy_mean[j]) ** 2)
+		v_sd[j] += ((v[i+cur_loc] - v_mean[j]) ** 2)
+		a_sd[j] += ((a[i+cur_loc] - a_mean[j]) ** 2)
+		jerk_sd[j] += ((jerk[i+cur_loc] - jerk_mean[j]) ** 2)
 	
 	#x_sd[j] = math.sqrt(x_sd/(size-1))
 	#y_sd[j] = math.sqrt(y_sd/(size-1))
-	angle_sd[j] = math.sqrt(angle_sd[j]/(cur_size-1))
-	angle_v_sd[j] = math.sqrt(angle_v_sd[j]/(cur_size-1))
-	curve_sd[j] = math.sqrt(curve_sd[j]/(cur_size-1))
-	curve_r_sd[j] = math.sqrt(curve_r_sd[j]/(cur_size-1))
-	vx_sd[j] = math.sqrt(vx_sd[j]/(cur_size-1))
-	vy_sd[j] = math.sqrt(vy_sd[j]/(cur_size-1))
-	v_sd[j] = math.sqrt(v_sd[j]/(cur_size-1))
-	a_sd[j] = math.sqrt(a_sd[j]/(cur_size-1))	
-	jerk_sd[j] = math.sqrt(jerk_sd[j]/(cur_size-1))
+	angle_sd[j] = math.sqrt(angle_sd[j]/(cur_size))
+	angle_v_sd[j] = math.sqrt(angle_v_sd[j]/(cur_size))
+	curve_sd[j] = math.sqrt(curve_sd[j]/(cur_size))
+	curve_r_sd[j] = math.sqrt(curve_r_sd[j]/(cur_size))
+	vx_sd[j] = math.sqrt(vx_sd[j]/(cur_size))
+	vy_sd[j] = math.sqrt(vy_sd[j]/(cur_size))
+	v_sd[j] = math.sqrt(v_sd[j]/(cur_size))
+	a_sd[j] = math.sqrt(a_sd[j]/(cur_size))	
+	jerk_sd[j] = math.sqrt(jerk_sd[j]/(cur_size))
 	
 # write features to output file
 with open('mouse_features.csv', 'w') as csvfile:
 	writer = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
 	for j in range(strokes-1) :
-		writer.writerow([events[j+1], critical_points[j], straightness[j], total_distance[j],
+		writer.writerow([events_complex[j], critical_points[j], straightness[j], total_distance[j],
 						angle_max[j], angle_min[j], angle_minmax[j], angle_mean[j], angle_sd[j],
 						angle_v_max[j], angle_v_min[j], angle_v_minmax[j], angle_v_mean[j], angle_v_sd[j], 
 						curve_max[j], curve_min[j], curve_minmax[j], curve_mean[j], curve_sd[j], 
